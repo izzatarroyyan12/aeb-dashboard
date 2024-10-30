@@ -1,36 +1,17 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Capstone Project B-09 Frontend Dashboard
 
-## Getting Started
+This is a frontend web application designed to monitor and interact with the Capstone Project B-09 prototype, providing real-time updates on vehicle speeds, distances to other vehicles, and connection status. Built with **Next.js** and **Tailwind CSS**, this app creates an interactive and user-friendly dashboard for displaying key metrics and allowing the user to adjust vehicle speeds via sliders.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Real-Time Monitoring**: Receive real-time data on the speed, distance to the front, and distance to the back for each of the three cars (Front Car, Main Car, and Back Car).
+- **WebSocket Connectivity**: Establishes a WebSocket connection to the ESP32 server, ensuring timely updates and interactive data flow.
+- **Speed Control**: Adjust desired speeds for each car using the interactive sliders, with changes reflected immediately in the app.
+- **Interactive UI**: Includes hover effects, animations, and toasts (using **React Toastify**) for a polished and responsive user experience.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Technologies Used
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js**: Provides a streamlined and efficient framework for React-based development.
+- **Tailwind CSS**: Ensures a modern and responsive design with utility-first CSS.
+- **React Toastify**: Adds notifications to enhance user experience during connection and interaction.
+- **WebSocket**: Allows for real-time data streaming from the ESP32 prototype server.
