@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { connectToWebSocket } from './utils';
@@ -39,6 +39,16 @@ const Page = () => {
         },
     ]);
 
+    useEffect(() => {
+        return () => {
+            carData.forEach(car => {
+                if (car.socket) {
+                    car.socket.close();
+                }
+            });
+        };
+    }, [carData]);
+
     const addLog = (message, type = 'info') => {
         setLogs(prevLogs => {
             const now = new Date();
@@ -65,31 +75,27 @@ const Page = () => {
             'ws://your-esp32-websocket-url-2',
             'ws://your-esp32-websocket-url-3',
         ];
-
+    
+        const updatedCarData = [...carData];
+    
         carUrls.forEach((url, index) => {
-            const car = carData[index];
-
+            const car = updatedCarData[index];
+    
             const socket = connectToWebSocket(
                 url,
                 (status) => {
-                    // Update the connection status for the specific car
-                    const updatedCarData = [...carData];
-                    updatedCarData[index].connectionStatus = status;
-                    setCarData(updatedCarData);
-                    
-                    // Log the connection status with the appropriate log level
+                    car.connectionStatus = status; // Update status directly
                     addLog(`${car.name}: ${status}`, status.includes('Failed') ? 'error' : 'info');
                 },
                 (data) => handleWebSocketMessage(data, index),
-                car.name // Pass the car name to connectToWebSocket for logging
+                car.name
             );
-            
-
-            const updatedCarData = [...carData];
-            updatedCarData[index].socket = socket;
-            setCarData(updatedCarData);
+    
+            car.socket = socket; // Update socket directly
         });
-    };
+    
+        setCarData(updatedCarData); // Update state once
+    };    
 
     const handleWebSocketMessage = (data, index) => {
         const updatedCarData = [...carData];
