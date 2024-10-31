@@ -9,110 +9,89 @@ const Page = () => {
     const [isLogOpen, setIsLogOpen] = useState(false);
     const [logs, setLogs] = useState([]);
 
-    const [carData, setCarData] = useState([
-        {
-            name: "Front Car",
-            socket: null,
-            connectionStatus: "No Connection Established",
-            desiredSpeed: 0,
-            actualSpeed: 0,
-            distanceToFront: 0,
-            distanceToBack: 0,
-        },
-        {
-            name: "Main Car",
-            socket: null,
-            connectionStatus: "No Connection Established",
-            desiredSpeed: 0,
-            actualSpeed: 0,
-            distanceToFront: 0,
-            distanceToBack: 0,
-        },
-        {
-            name: "Back Car",
-            socket: null,
-            connectionStatus: "No Connection Established",
-            desiredSpeed: 0,
-            actualSpeed: 0,
-            distanceToFront: 0,
-            distanceToBack: 0,
-        },
-    ]);
+    // Initialize car data with default values
+    const initialCarData = [
+        { name: "Front Car", socket: null, connectionStatus: "No Connection Established", desiredSpeed: 0, actualSpeed: 0, distanceToFront: 0, distanceToBack: 0 },
+        { name: "Main Car", socket: null, connectionStatus: "No Connection Established", desiredSpeed: 0, actualSpeed: 0, distanceToFront: 0, distanceToBack: 0 },
+        { name: "Back Car", socket: null, connectionStatus: "No Connection Established", desiredSpeed: 0, actualSpeed: 0, distanceToFront: 0, distanceToBack: 0 },
+    ];
+    const [carData, setCarData] = useState(initialCarData);
 
+    // Clean up WebSocket connections when the component unmounts
     useEffect(() => {
         return () => {
-            carData.forEach(car => {
-                if (car.socket) {
-                    car.socket.close();
-                }
-            });
+            carData.forEach(car => car.socket && car.socket.close());
         };
     }, [carData]);
 
+    // Add a log entry and trigger a toast notification
     const addLog = (message, type = 'info') => {
-        setLogs(prevLogs => {
-            const now = new Date();
-            const newLog = {
-                id: now.getTime(),
-                timestamp: now.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                message,
-                type,
-                sortTime: now.getTime(),
-            };
-            return [newLog, ...prevLogs];
-        });
+        const now = new Date();
+        const newLog = {
+            id: now.getTime(),
+            timestamp: now.toLocaleString('en-US'),
+            message,
+            type,
+        };
+        setLogs(prevLogs => [newLog, ...prevLogs]);
 
-        if (type === 'error') {
-            toast.error(message);
-        } else {
-            toast.info(message);
-        }
+        type === 'error' ? toast.error(message) : toast.info(message);
     };
 
+    // Connect to all WebSockets for the cars
     const connectAllWebSockets = () => {
         const carUrls = [
             'ws://your-esp32-websocket-url-1',
             'ws://your-esp32-websocket-url-2',
             'ws://your-esp32-websocket-url-3',
         ];
-    
-        const updatedCarData = [...carData];
-    
+
+        const updatedCarData = [...carData]; // Create a copy of car data
+
         carUrls.forEach((url, index) => {
-            const car = updatedCarData[index];
-    
+            const car = updatedCarData[index]; // Get car data by index
+
+            // Establish a WebSocket connection
             const socket = connectToWebSocket(
                 url,
-                (status) => {
-                    car.connectionStatus = status; // Update status directly
+                status => {
+                    car.connectionStatus = status; // Update status
                     addLog(`${car.name}: ${status}`, status.includes('Failed') ? 'error' : 'info');
                 },
-                (data) => handleWebSocketMessage(data, index),
+                data => handleWebSocketMessage(data, index),
                 car.name
             );
-    
-            car.socket = socket; // Update socket directly
+
+            car.socket = socket; // Assign the socket to car data
         });
-    
+
         setCarData(updatedCarData); // Update state once
     };    
 
+    // Handle incoming WebSocket messages
     const handleWebSocketMessage = (data, index) => {
         const updatedCarData = [...carData];
-        updatedCarData[index].actualSpeed = data.speed;
-        updatedCarData[index].distanceToFront = data.distanceToFront;
-        updatedCarData[index].distanceToBack = data.distanceToBack;
+        updatedCarData[index] = {
+            ...updatedCarData[index],
+            actualSpeed: data.speed,
+            distanceToFront: data.distanceToFront,
+            distanceToBack: data.distanceToBack,
+        };
         setCarData(updatedCarData);
     };
 
+    // Update desired speed based on slider input
     const handleSpeedChange = (index) => (e) => {
         const speed = Number(e.target.value);
         const updatedCarData = [...carData];
         updatedCarData[index].desiredSpeed = speed;
-        setCarData(updatedCarData);
+        setCarData(updatedCarData); // Update the state
+
+        // Send the new speed to the WebSocket
         updatedCarData[index].socket.send(JSON.stringify({ speed }));
     };
 
+    // Toggle the log sidebar
     const toggleLog = () => setIsLogOpen(prev => !prev);
 
     return (
@@ -162,6 +141,7 @@ const Page = () => {
     );
 };
 
+// CarCard component to display car information
 const CarCard = ({ carName, actualSpeed, desiredSpeed, distanceToFront, distanceToBack, connectionStatus, handleSpeedChange }) => (
     <div className="card bg-white bg-opacity-30 rounded-lg shadow-lg p-8 w-72 h-85 flex flex-col items-center justify-center hover:scale-105 hover:shadow-2xl transition-transform duration-300 ease-in-out">
         <h2 className="text-2xl font-bold text-center mb-4">{carName}</h2>
