@@ -9,101 +9,102 @@ const Page = () => {
     const [isLogOpen, setIsLogOpen] = useState(false);
     const [logs, setLogs] = useState([]);
 
-    const [socket1, setSocket1] = useState(null);
-    const [socket2, setSocket2] = useState(null);
-    const [socket3, setSocket3] = useState(null);
-
-    const [connectionStatus1, setConnectionStatus1] = useState("No Connection Established");
-    const [desiredSpeed1, setDesiredSpeed1] = useState(0);
-    const [actualSpeed1, setActualSpeed1] = useState(0);
-    const [distanceToFront1, setDistanceToFront1] = useState(0);
-    const [distanceToBack1, setDistanceToBack1] = useState(0);
-
-    const [connectionStatus2, setConnectionStatus2] = useState("No Connection Established");
-    const [desiredSpeed2, setDesiredSpeed2] = useState(0);
-    const [actualSpeed2, setActualSpeed2] = useState(0);
-    const [distanceToFront2, setDistanceToFront2] = useState(0);
-    const [distanceToBack2, setDistanceToBack2] = useState(0);
-
-    const [connectionStatus3, setConnectionStatus3] = useState("No Connection Established");
-    const [desiredSpeed3, setDesiredSpeed3] = useState(0);
-    const [actualSpeed3, setActualSpeed3] = useState(0);
-    const [distanceToFront3, setDistanceToFront3] = useState(0);
-    const [distanceToBack3, setDistanceToBack3] = useState(0);
+    const [carData, setCarData] = useState([
+        {
+            name: "Front Car",
+            socket: null,
+            connectionStatus: "No Connection Established",
+            desiredSpeed: 0,
+            actualSpeed: 0,
+            distanceToFront: 0,
+            distanceToBack: 0,
+        },
+        {
+            name: "Main Car",
+            socket: null,
+            connectionStatus: "No Connection Established",
+            desiredSpeed: 0,
+            actualSpeed: 0,
+            distanceToFront: 0,
+            distanceToBack: 0,
+        },
+        {
+            name: "Back Car",
+            socket: null,
+            connectionStatus: "No Connection Established",
+            desiredSpeed: 0,
+            actualSpeed: 0,
+            distanceToFront: 0,
+            distanceToBack: 0,
+        },
+    ]);
 
     const addLog = (message, type = 'info') => {
         setLogs(prevLogs => {
             const now = new Date();
             const newLog = {
-                id: now.getTime(), // Use timestamp as id for perfect sorting
-                timestamp: now.toLocaleString('en-US', { 
-                    year: 'numeric', 
-                    month: '2-digit', 
-                    day: '2-digit', 
-                    hour: '2-digit', 
-                    minute: '2-digit', 
-                    second: '2-digit',
-                }),
+                id: now.getTime(),
+                timestamp: now.toLocaleString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                 message,
                 type,
-                sortTime: now.getTime() // Add a sortTime field for accurate sorting
+                sortTime: now.getTime(),
             };
             return [newLog, ...prevLogs];
         });
-    
-        // Show toast notification
+
         if (type === 'error') {
             toast.error(message);
         } else {
             toast.info(message);
         }
     };
-    
+
     const connectAllWebSockets = () => {
         const carUrls = [
             'ws://your-esp32-websocket-url-1',
             'ws://your-esp32-websocket-url-2',
             'ws://your-esp32-websocket-url-3',
         ];
-    
-        const carNames = ["Front Car", "Main Car", "Back Car"];
-    
+
         carUrls.forEach((url, index) => {
-            const carName = carNames[index];
+            const car = carData[index];
+
             const socket = connectToWebSocket(
                 url,
                 (status) => {
-                    addLog(`${carName}: ${status}`, status.includes('Failed') ? 'error' : 'info');
-                    if (carName === "Front Car") setConnectionStatus1(status);
-                    else if (carName === "Main Car") setConnectionStatus2(status);
-                    else if (carName === "Back Car") setConnectionStatus3(status);
+                    // Update the connection status for the specific car
+                    const updatedCarData = [...carData];
+                    updatedCarData[index].connectionStatus = status;
+                    setCarData(updatedCarData);
+                    
+                    // Log the connection status with the appropriate log level
+                    addLog(`${car.name}: ${status}`, status.includes('Failed') ? 'error' : 'info');
                 },
-                (data) => handleWebSocketMessage(data, 
-                    index === 0 ? setActualSpeed1 : index === 1 ? setActualSpeed2 : setActualSpeed3,
-                    index === 0 ? setDistanceToFront1 : index === 1 ? setDistanceToFront2 : setDistanceToFront3,
-                    index === 0 ? setDistanceToBack1 : index === 1 ? setDistanceToBack2 : setDistanceToBack3,
-                    setLogs, carName // Pass the car name to the log
-                )
+                (data) => handleWebSocketMessage(data, index),
+                car.name // Pass the car name to connectToWebSocket for logging
             );
-    
-            if (index === 0) setSocket1(socket);
-            else if (index === 1) setSocket2(socket);
-            else if (index === 2) setSocket3(socket);
+            
+
+            const updatedCarData = [...carData];
+            updatedCarData[index].socket = socket;
+            setCarData(updatedCarData);
         });
-    };    
+    };
+
+    const handleWebSocketMessage = (data, index) => {
+        const updatedCarData = [...carData];
+        updatedCarData[index].actualSpeed = data.speed;
+        updatedCarData[index].distanceToFront = data.distanceToFront;
+        updatedCarData[index].distanceToBack = data.distanceToBack;
+        setCarData(updatedCarData);
+    };
 
     const handleSpeedChange = (index) => (e) => {
         const speed = Number(e.target.value);
-        if (index === 0) {
-            setDesiredSpeed1(speed);
-            socket1.send(JSON.stringify({ speed }));
-        } else if (index === 1) {
-            setDesiredSpeed2(speed);
-            socket2.send(JSON.stringify({ speed }));
-        } else if (index === 2) {
-            setDesiredSpeed3(speed);
-            socket3.send(JSON.stringify({ speed }));
-        }
+        const updatedCarData = [...carData];
+        updatedCarData[index].desiredSpeed = speed;
+        setCarData(updatedCarData);
+        updatedCarData[index].socket.send(JSON.stringify({ speed }));
     };
 
     const toggleLog = () => setIsLogOpen(prev => !prev);
@@ -131,33 +132,18 @@ const Page = () => {
 
                 <div className="flex flex-col items-center space-y-8 w-11/12 max-w-6xl">
                     <div className="flex space-x-8 justify-center w-full">
-                        <CarCard
-                            carName="Front Car"
-                            actualSpeed={actualSpeed1}
-                            desiredSpeed={desiredSpeed1}
-                            distanceToFront={distanceToFront1}
-                            distanceToBack={distanceToBack1}
-                            connectionStatus={connectionStatus1}
-                            handleSpeedChange={handleSpeedChange(0)} // Use specific handler for each car
-                        />
-                        <CarCard
-                            carName="Main Car"
-                            actualSpeed={actualSpeed2}
-                            desiredSpeed={desiredSpeed2}
-                            distanceToFront={distanceToFront2}
-                            distanceToBack={distanceToBack2}
-                            connectionStatus={connectionStatus2}
-                            handleSpeedChange={handleSpeedChange(1)} // Use specific handler for each car
-                        />
-                        <CarCard
-                            carName="Back Car"
-                            actualSpeed={actualSpeed3}
-                            desiredSpeed={desiredSpeed3}
-                            distanceToFront={distanceToFront3}
-                            distanceToBack={distanceToBack3}
-                            connectionStatus={connectionStatus3}
-                            handleSpeedChange={handleSpeedChange(2)} // Use specific handler for each car
-                        />
+                        {carData.map((car, index) => (
+                            <CarCard
+                                key={car.name}
+                                carName={car.name}
+                                actualSpeed={car.actualSpeed}
+                                desiredSpeed={car.desiredSpeed}
+                                distanceToFront={car.distanceToFront}
+                                distanceToBack={car.distanceToBack}
+                                connectionStatus={car.connectionStatus}
+                                handleSpeedChange={handleSpeedChange(index)} // Use specific handler for each car
+                            />
+                        ))}
                     </div>
                     <button onClick={connectAllWebSockets} className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300">
                         Connect All Cars

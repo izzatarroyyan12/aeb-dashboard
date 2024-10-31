@@ -1,3 +1,4 @@
+let logCounter = 0; // Initialize log counter outside function
 let lastConnectionStatus = {}; // Track last connection status for each car
 
 export const connectToWebSocket = (url, setStatus, handleMessage, carName) => {
@@ -20,7 +21,7 @@ export const connectToWebSocket = (url, setStatus, handleMessage, carName) => {
     };
 
     socket.onerror = (error) => {
-        console.error(`${carName} WebSocket error: `, error ? error : "No error object provided");
+        console.error(`${carName} WebSocket error: `, error);
         // Only notify the user if the connection was attempted
         if (socket.readyState === WebSocket.CONNECTING) {
             setStatus("Connection Failed");
