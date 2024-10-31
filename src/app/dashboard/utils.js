@@ -1,4 +1,3 @@
-let logCounter = 0; // Initialize log counter outside function
 let lastConnectionStatus = {}; // Track last connection status for each car
 
 export const connectToWebSocket = (url, setStatus, handleMessage, carName) => {
