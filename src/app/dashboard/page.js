@@ -86,10 +86,17 @@ const Page = () => {
         const updatedCarData = [...carData];
         updatedCarData[index].desiredSpeed = speed;
         setCarData(updatedCarData); // Update the state
-
-        // Send the new speed to the WebSocket
-        updatedCarData[index].socket.send(JSON.stringify({ speed }));
+    
+        // Check if the WebSocket connection is open before sending
+        const socket = updatedCarData[index].socket;
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ speed }));
+            
+        } else {
+            addLog(`${updatedCarData[index].name}: Unable to send speed, connection not open`, 'error');
+        }
     };
+    
 
     // Toggle the log sidebar
     const toggleLog = () => setIsLogOpen(prev => !prev);
